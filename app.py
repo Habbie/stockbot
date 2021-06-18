@@ -125,19 +125,19 @@ class IRCBot(SingleServerIRCBot, ScheduleHandlerAlways):
     def on_pubmsg(self, c, e):
         sender = e.source.nick
         message = e.arguments[0]
-        split = message.split(" ")
-        to_me = split[0].endswith(":") and irc.strings.lower(split[0].rstrip(":")) == irc.strings.lower(
-            self.connection.get_nickname())
+        if message[0] != '!':
+            return
 
-        if to_me:
-            commands = [irc.strings.lower(x) for x in split[1:]]
-            try:
-                root_command.execute(*commands, command_args={"service_factory": self.quote_service_factory,
-                                                              "instance": self, "sender": sender},
-                                     callback=self.command_callback, callback_args={"sender": sender})
-            except Exception as e:
-                LOGGER.exception("something failed", e)
-                self.command_callback("something failed", sender=sender)
+        split = message[1:].split(" ")
+
+        commands = [irc.strings.lower(x) for x in split]
+        try:
+            root_command.execute(*commands, command_args={"service_factory": self.quote_service_factory,
+                                                          "instance": self, "sender": sender},
+                                 callback=self.command_callback, callback_args={"sender": sender})
+        except Exception as e:
+            LOGGER.exception("something failed", e)
+            self.command_callback("something failed", sender=sender)
 
     def command_callback_priv(self, result, **kwargs):
         target = kwargs.get('sender', None)
