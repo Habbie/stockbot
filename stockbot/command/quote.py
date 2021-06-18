@@ -27,12 +27,21 @@ def ticker_hint(provider, ticker):
 
 
 def get_quote(*args, **kwargs):
-    provider = args[0]
-    ticker = " ".join(args[1:])
+    provider = args[1]
+    form = args[0]
+    ticker = " ".join(args[2:])
     try:
         service = kwargs.get('service_factory').get_service(provider)
         ticker = ticker_hint(provider, ticker)
-        return service.get_quote(ticker)
+        quote = service.get_quote(ticker)
+        if form == 'short':
+            qdict = dict(quote.fields)
+            for k in 'Low Price', 'High Price', 'Percent Change 1 Day', 'Market':
+                if k in qdict:
+                    del qdict[k]
+            quote.fields = qdict.items()
+
+        return quote
     except ValueError as e:
         LOGGER.exception("failed to retrieve service for provider '{}'".format(provider))
         return "No such provider '{}'".format(provider)
@@ -153,9 +162,9 @@ hint_command.register(BlockingExecuteCommand(name="list", execute_command=list_q
                                              help="<provider>", expected_num_args=1))
 
 
-quote_command = Command(name="quote", short_name="q")
+quote_command = Command(name="quote")
 quote_command.register(BlockingExecuteCommand(name="get", execute_command=get_quote, help="<provider> <ticker>",
-                                              expected_num_args=2))
+                                              expected_num_args=3))
 quote_command.register(BlockingExecuteCommand(name="get_fresh", execute_command=get_fresh_quote,
                                               help="<provider> <ticker>", expected_num_args=2))
 quote_command.register(BlockingExecuteCommand(name="gl", execute_command=get_quote_lucky,
@@ -167,5 +176,9 @@ quote_command.register(hint_command)
 root_command.register(quote_command)
 root_command.register(BlockingExecuteCommand(name="quick", short_name="qq", execute_command=get_quote_quick,
                                              help="<search-ticker-string>", expected_num_args=1))
-root_command.register(ProxyCommand(name="qy", proxy_command=("quote", "get", "yahoo"), help="<ticker>",
+root_command.register(ProxyCommand(name="qy", proxy_command=("quote", "get", "short", "yahoo"), help="<ticker>",
+                                   expected_num_args=1))
+root_command.register(ProxyCommand(name="q", proxy_command=("quote", "get", "short"), help="<ticker>",
+                                   expected_num_args=1))
+root_command.register(ProxyCommand(name="ql", proxy_command=("quote", "get", "long"), help="<ticker>",
                                    expected_num_args=1))
