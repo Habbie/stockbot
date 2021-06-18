@@ -33,6 +33,9 @@ class ColorHelper(object):
 
 
 def colorify(msg):
+    return msg
+
+def _colorify(msg):
 
     num_change_regex = re.compile("[^\w]?(total (percentage return|return)|%)[^\w]?", flags=re.IGNORECASE)
     num_important_change_regex = re.compile("[^\w]?(change|rebate percentage)[^\w]?", flags=re.IGNORECASE)
